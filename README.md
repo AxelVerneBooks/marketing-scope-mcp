@@ -58,6 +58,14 @@ claude mcp add marketing-scope -- node /path/to/dist/index.js
 node dist/index.js --http --port 3002        # serves MCP at http://127.0.0.1:3002/mcp
 ```
 
+### Docker
+
+```bash
+docker build -t marketing-scope-mcp -f docker/Dockerfile .
+docker run -d --name marketing-scope -p 3002:3002 marketing-scope-mcp
+# MCP at http://127.0.0.1:3002/mcp; plans persist in the /app/data volume
+```
+
 Data dir (plans on disk) defaults to `./data`; override with
 `MARKETING_SCOPE_DATA_DIR`.
 
