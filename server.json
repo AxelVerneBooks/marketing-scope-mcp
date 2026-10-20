@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.AxelVerneBooks/marketing-scope-mcp",
   "title": "Marketing Scope",
-  "description": "Plan campaigns, score offers explainably (0-100), and enforce tactic-level offer citations + success metrics before spending.",
+  "description": "Plan campaigns, score offers explainably, and enforce offer-cited tactics before spending.",
   "version": "0.1.0",
   "websiteUrl": "https://axelverne.com/",
   "repository": {
