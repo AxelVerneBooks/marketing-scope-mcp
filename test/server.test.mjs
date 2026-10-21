@@ -1,23 +1,26 @@
 /**
- * Integration test — launches the built stdio server and drives the full workflow:
- * plan_campaign → score_offer → build_plan → check_plan.
+ * End-to-end tests — launch the built CLI (dist/index.js) as a child process
+ * and drive it over stdio and Streamable HTTP, exactly as an MCP client would.
  * Run: npm test
  */
-import { test } from "node:test";
+import { test, describe, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { spawn, spawnSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { once } from "node:events";
 
-const DATA_DIR = mkdtempSync(join(tmpdir(), "msmcp-test-"));
+import { tempDir, withTactics, STRONG_OFFER } from "./helpers.mjs";
+
+const ENTRY = join(process.cwd(), "dist", "index.js");
+const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
 
 /** Minimal MCP stdio client for the test: JSON-RPC line responses per request id. */
 class StdioMcpClient {
   #child;
   #buf = "";
   #pending = new Map();
+  #nextId = 1;
   constructor(child) {
     this.#child = child;
     child.stdout.setEncoding("utf8");
@@ -28,12 +31,7 @@ class StdioMcpClient {
         const line = this.#buf.slice(0, idx).trim();
         this.#buf = this.#buf.slice(idx + 1);
         if (!line) continue;
-        let msg;
-        try {
-          msg = JSON.parse(line);
-        } catch {
-          continue; // tolerate interleaved non-JSON lines (banner noise)
-        }
+        const msg = JSON.parse(line); // stdout must carry nothing but protocol messages
         if (msg.id !== undefined && this.#pending.has(msg.id)) {
           this.#pending.get(msg.id)(msg);
           this.#pending.delete(msg.id);
@@ -41,17 +39,16 @@ class StdioMcpClient {
       }
     });
   }
-  static spawn() {
-    const child = spawn(process.execPath, [join(process.cwd(), "dist", "index.js")], {
-      cwd: process.cwd(),
-      env: { ...process.env, MARKETING_SCOPE_DATA_DIR: DATA_DIR },
+  static spawn(dataDir) {
+    const child = spawn(process.execPath, [ENTRY], {
+      env: { ...process.env, MARKETING_SCOPE_DATA_DIR: dataDir },
       stdio: ["pipe", "pipe", "inherit"],
     });
     return new this(child);
   }
   request(method, params, timeoutMs = 30000) {
     return new Promise((resolve, reject) => {
-      const id = Math.floor(Math.random() * 1e9);
+      const id = this.#nextId++;
       const timer = setTimeout(() => {
         this.#pending.delete(id);
         reject(new Error(`timeout waiting for ${method}`));
@@ -67,6 +64,14 @@ class StdioMcpClient {
   notify(method, params) {
     this.#child.stdin.write(JSON.stringify({ jsonrpc: "2.0", method, params }) + "\n");
   }
+  async initialize() {
+    const init = await this.request("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test-client", version: "0.0.1" } });
+    this.notify("notifications/initialized", {});
+    return init;
+  }
+  call(name, args) {
+    return this.request("tools/call", { name, arguments: args });
+  }
   async close() {
     this.#child.stdin.end();
     this.#child.kill();
@@ -74,148 +79,165 @@ class StdioMcpClient {
   }
 }
 
-/** Pull the first JSON text payload out of an MCP tool result. */
-function textPayload(result) {
+const textOf = (result) => {
   assert.ok(result?.content?.[0]?.text, `no text content in ${JSON.stringify(result)}`);
   return result.content[0].text;
+};
+
+/** Start the HTTP transport on a free port and wait for its listening line. */
+async function startHttp(dataDir, extraArgs = []) {
+  const child = spawn(process.execPath, [ENTRY, "--http", "--port", "0", ...extraArgs], {
+    env: { ...process.env, MARKETING_SCOPE_DATA_DIR: dataDir },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  let stderr = "";
+  child.stderr.setEncoding("utf8");
+  const address = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`HTTP server never started: ${stderr}`)), 10000);
+    child.stderr.on("data", (d) => {
+      stderr += d;
+      const m = stderr.match(/on (http:\/\/\S+)\/mcp/);
+      if (m) {
+        clearTimeout(timer);
+        resolve(m[1]);
+      }
+    });
+    child.on("exit", (code) => reject(new Error(`exited ${code}: ${stderr}`)));
+  });
+  return {
+    base: address,
+    stop: async () => {
+      child.kill();
+      await once(child, "exit").catch(() => {});
+    },
+  };
 }
 
-test("initialize + tools/list exposes the four workflow tools", async () => {
-  const client = StdioMcpClient.spawn();
-  try {
-    const init = await client.request("initialize", {
-      protocolVersion: "2025-06-18",
-      capabilities: {},
-      clientInfo: { name: "test-client", version: "0.0.1" },
-    });
-    assert.equal(init.serverInfo.name, "marketing-scope-mcp");
-    client.notify("notifications/initialized", {});
-    const tools = await client.request("tools/list", {});
-    const names = tools.tools.map((t) => t.name).sort();
-    assert.deepEqual(names, ["build_plan", "check_plan", "plan_campaign", "score_offer"]);
-  } finally {
-    await client.close();
-  }
+const ACCEPT = { "content-type": "application/json", accept: "application/json, text/event-stream" };
+async function rpc(base, payload) {
+  const res = await fetch(`${base}/mcp`, { method: "POST", headers: ACCEPT, body: JSON.stringify(payload) });
+  const t = await res.text();
+  const dataLine = t.split("\n").find((l) => l.startsWith("data:"));
+  return { status: res.status, body: JSON.parse(dataLine ? dataLine.slice(5).trim() : t) };
+}
+
+describe("CLI", () => {
+  test("--version prints the package version", () => {
+    const r = spawnSync(process.execPath, [ENTRY, "--version"], { encoding: "utf8" });
+    assert.equal(r.status, 0);
+    assert.equal(r.stdout.trim(), pkg.version);
+  });
+  test("--help prints usage", () => {
+    const r = spawnSync(process.execPath, [ENTRY, "--help"], { encoding: "utf8" });
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /Usage:[\s\S]*--http[\s\S]*--host/);
+  });
+  test("an invalid --port exits with status 2", () => {
+    const r = spawnSync(process.execPath, [ENTRY, "--http", "--port", "nope"], { encoding: "utf8", timeout: 5000 });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /Invalid port/);
+  });
+  test("the bin entry exists and has a node shebang", () => {
+    assert.equal(pkg.bin["marketing-scope-mcp"], "dist/index.js");
+    assert.match(readFileSync(ENTRY, "utf8"), /^#!\/usr\/bin\/env node\n/);
+  });
 });
 
-test("stateless HTTP transport: second request works with no session (regression: transport-per-request)", async () => {
-  const dataDir = mkdtempSync(join(tmpdir(), "msmcp-http-test-"));
-  const port = 42000 + Math.floor(Math.random() * 5000);
-  const child = spawn(
-    process.execPath,
-    [join(process.cwd(), "dist", "index.js"), "--http", "--port", String(port)],
-    { cwd: process.cwd(), env: { ...process.env, MARKETING_SCOPE_DATA_DIR: dataDir }, stdio: ["ignore", "ignore", "inherit"] }
-  );
-  try {
-    const base = `http://127.0.0.1:${port}/mcp`;
-    let up = false;
-    for (let i = 0; i < 40 && !up; i++) {
-      try {
-        await fetch(base, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: 0, method: "ping", params: {} }) });
-        up = true;
-      } catch {
-        await new Promise((r) => setTimeout(r, 250));
-      }
+describe("stdio transport", () => {
+  let tmp;
+  before(() => {
+    tmp = tempDir();
+  });
+  after(() => tmp.cleanup());
+
+  test("initialize + tools/list exposes the four workflow tools", async () => {
+    const client = StdioMcpClient.spawn(tmp.dir);
+    try {
+      const init = await client.initialize();
+      assert.equal(init.serverInfo.name, "marketing-scope-mcp");
+      assert.equal(init.serverInfo.version, pkg.version);
+      const tools = await client.request("tools/list", {});
+      assert.deepEqual(tools.tools.map((t) => t.name).sort(), ["build_plan", "check_plan", "plan_campaign", "score_offer"]);
+    } finally {
+      await client.close();
     }
-    assert.ok(up, `HTTP server on ${port} never opened`);
+  });
 
-    const post = async (payload) =>
-      fetch(base, {
-        method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-        body: JSON.stringify(payload),
-      });
-    const parse = async (res) => {
-      const t = await res.text();
-      const dataLine = t.split("\n").find((l) => l.startsWith("data:"));
-      return JSON.parse(dataLine ? dataLine.slice(5).trim() : t);
-    };
+  test("full workflow: plan → score_offer → build → edit → check (gating enforced)", async () => {
+    const client = StdioMcpClient.spawn(tmp.dir);
+    try {
+      await client.initialize();
+      const plan = JSON.parse(textOf(await client.call("plan_campaign", { objective: "sell 30 copies of the build manual in 30 days" })));
+      assert.ok(plan.killCriteria.length >= 1);
 
-    const init = await parse(await post({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "http-test", version: "0" } } }));
-    assert.equal(init.result?.serverInfo?.name, "marketing-scope-mcp");
+      const scored = JSON.parse(textOf(await client.call("score_offer", { offer: STRONG_OFFER })));
+      assert.equal(scored.grade, "A");
 
-    // THE regression: further requests must NOT 500, even without any session
-    const listed = await parse(await post({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }));
-    assert.equal(listed.result?.tools?.length, 4, `tools/list broke: ${JSON.stringify(listed)}`);
-    const call = await parse(await post({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "plan_campaign", arguments: { objective: "http regression probe" } } }));
-    const plan = JSON.parse(call.result.content[0].text);
-    assert.ok(plan.killCriteria.length >= 1);
-    assert.ok(plan.offerTargets.length >= 1);
-  } finally {
-    child.kill();
-    await once(child, "exit").catch(() => {});
-    rmSync(dataDir, { recursive: true, force: true });
-  }
+      const refused = await client.call("build_plan", { goal: "Bad", offers: ["An offer that was never scored at all"] });
+      assert.equal(refused.isError, true);
+
+      const built = textOf(await client.call("build_plan", { goal: "E2E plan", offers: [STRONG_OFFER] }));
+      const [, id, path] = built.match(/Campaign shell (\S+) saved to (\S+\.md)/);
+      assert.ok(path.startsWith(tmp.dir));
+
+      const fresh = JSON.parse(textOf(await client.call("check_plan", { plan_id: id })));
+      assert.equal(fresh.pass, false);
+
+      writeFileSync(path, withTactics(readFileSync(path, "utf8"), ["- Email the list a launch note introducing [O1]; success metric: 3% click-through"]));
+      const checked = JSON.parse(textOf(await client.call("check_plan", { plan_id: id })));
+      assert.equal(checked.pass, true, JSON.stringify(checked));
+    } finally {
+      await client.close();
+    }
+  });
 });
 
-test("full workflow: plan → score_offer → build → check (gating enforced)", async () => {
-  const client = StdioMcpClient.spawn();
-  try {
-    await client.request("initialize", {
-      protocolVersion: "2025-06-18",
-      capabilities: {},
-      clientInfo: { name: "test-client", version: "0.0.1" },
-    });
-    client.notify("notifications/initialized", {});
+describe("Streamable HTTP transport", () => {
+  let tmp;
+  let srv;
+  before(async () => {
+    tmp = tempDir();
+    srv = await startHttp(tmp.dir);
+  });
+  after(async () => {
+    await srv.stop();
+    tmp.cleanup();
+  });
 
-    // 1. plan
-    const plan = JSON.parse(textPayload(await client.request("tools/call", { name: "plan_campaign", arguments: { objective: "sell 30 copies of the build manual in 30 days" } })));
-    assert.ok(plan.offerTargets.length >= 1);
+  test("binds to loopback by default", () => {
+    assert.match(srv.base, /^http:\/\/127\.0\.0\.1:\d+$/);
+  });
+
+  test("stateless: requests after initialize work with no session (regression: transport-per-request)", async () => {
+    const init = await rpc(srv.base, { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "http-test", version: "0" } } });
+    assert.equal(init.body.result?.serverInfo?.name, "marketing-scope-mcp");
+    const listed = await rpc(srv.base, { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
+    assert.equal(listed.status, 200);
+    assert.equal(listed.body.result?.tools?.length, 4, JSON.stringify(listed.body));
+    const call = await rpc(srv.base, { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "plan_campaign", arguments: { objective: "http regression probe" } } });
+    const plan = JSON.parse(call.body.result.content[0].text);
     assert.ok(plan.killCriteria.length >= 1);
+  });
 
-    // 2. score_offer — a strong, specific offer should grade high; a vague one low
-    const strongOffer = "The Working Farm Ledger: 12 print-ready farm ledgers (letter + A4 PDFs) only $19, includes wall chart — unlike generic ledgers it strips to 40 records a season. Start today.";
-    const scored = JSON.parse(textPayload(await client.request("tools/call", { name: "score_offer", arguments: { offer: strongOffer, audience: "for small-hold farmers who sell at markets" } })));
-    assert.ok(typeof scored.score === "number" && scored.score > 0, `expected positive score, got ${JSON.stringify(scored)}`);
-    assert.ok(Array.isArray(scored.flags));
-    assert.ok(scored.breakdown.length === 5);
+  test("check_plan cannot read files outside the data dir over HTTP", async () => {
+    const call = await rpc(srv.base, { jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "check_plan", arguments: { plan_path: "/etc/passwd" } } });
+    assert.equal(call.body.result.isError, true);
+    assert.match(call.body.result.content[0].text, /inside the server data directory/);
+  });
 
-    const vague = JSON.parse(textPayload(await client.request("tools/call", { name: "score_offer", arguments: { offer: "World-class revolutionary solutions for everyone" } })));
-    assert.ok(vague.score < 60, `vague offer should score low, got ${vague.score}`);
-    assert.ok(vague.flags.includes("no-price"));
+  test("/healthz reports status; unknown paths 404", async () => {
+    const health = await fetch(`${srv.base}/healthz`);
+    assert.equal(health.status, 200);
+    assert.deepEqual(await health.json(), { status: "ok", name: "marketing-scope-mcp", version: pkg.version });
+    assert.equal((await fetch(`${srv.base}/nope`)).status, 404);
+  });
 
-    // 3. build_plan with the scored offer (registry is dual-indexed on exact text)
-    const built = textPayload(await client.request("tools/call", {
-      name: "build_plan",
-      arguments: { goal: "Farm ledger pre-launch", offers: [strongOffer] },
-    }));
-    assert.match(built, /Offer registry/);
-    assert.match(built, /campaign-.*\.md/);
-
-    // unscored offers must be refused
-    const refused = await client.request("tools/call", {
-      name: "build_plan",
-      arguments: { goal: "Bad", offers: ["never scored by score_offer ever"] },
-    });
-    assert.equal(refused.isError, true);
-    assert.match(textPayload(refused), /never scored/);
-
-    // 4. check_plan on the fresh shell — zero tactics yet → FAIL with instructions
-    const m = built.match(/saved to (\S+\.md)/);
-    assert.ok(m, "built output should name the plan path");
-    const check = JSON.parse(textPayload(await client.request("tools/call", { name: "check_plan", arguments: { plan_path: m[1] } })));
-    assert.equal(check.pass, false);
-    assert.match(check.verdict, /no tactics/i);
-
-    // 5. hand-write a tactic with [O1] + metric → PASS; an unsourced tactic → FAIL
-    let markdown = await import("node:fs").then((fs) => fs.readFileSync(m[1], "utf8"));
-    markdown = markdown.replace("- <!-- Example: - Send 3-email welcome sequence", "- Send 3-email welcome sequence to list introducing [O1]; success metric: 35% open rate\n- <!-- Example: - Send 3-email welcome sequence");
-    await import("node:fs").then((fs) => fs.writeFileSync(m[1], markdown, "utf8"));
-    const check2 = JSON.parse(textPayload(await client.request("tools/call", { name: "check_plan", arguments: { plan_path: m[1] } })));
-    assert.equal(check2.pass, true, `expected PASS, got ${JSON.stringify(check2)}`);
-
-    const uncited = "- Blast a retargeting campaign at everyone on the internet repeatedly";
-    // insert INSIDE the channel briefs section (before ## Offer registry) so it is scored
-    const insertAt = markdown.indexOf("## Offer registry");
-    assert.ok(insertAt > 0, "shell must contain ## Offer registry");
-    markdown = markdown.slice(0, insertAt) + uncited + "\n\n" + markdown.slice(insertAt);
-    await import("node:fs").then((fs) => fs.writeFileSync(m[1], markdown, "utf8"));
-    const check3 = JSON.parse(textPayload(await client.request("tools/call", { name: "check_plan", arguments: { plan_path: m[1] } })));
-    assert.equal(check3.pass, false);
-    assert.ok(Array.isArray(check3.orphanTactics) && check3.orphanTactics.length >= 1);
-    void uncited;
-  } finally {
-    await client.close();
-  }
-  rmSync(DATA_DIR, { recursive: true, force: true });
+  test("--host overrides the bind address", async () => {
+    const other = await startHttp(tmp.dir, ["--host", "0.0.0.0"]);
+    try {
+      assert.match(other.base, /^http:\/\/0\.0\.0\.0:\d+$/);
+    } finally {
+      await other.stop();
+    }
+  });
 });

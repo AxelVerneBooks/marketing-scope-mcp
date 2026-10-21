@@ -1,5 +1,5 @@
 /**
- * marketing-scope-mcp — offer-strength scoring (v0.1.0)
+ * marketing-scope-mcp — offer-strength scoring
  *
  * Heuristic, explainable scoring. Every dimension is returned WITH the evidence
  * (or the absence of evidence) that produced it, so a `score >= 80` can be
@@ -88,8 +88,9 @@ const VAGUE_WORDS = [
   "leverage",
 ];
 
+// "for <segment>", but not "for free", "for only $9", "for life", ...
 const AUDIENCE_MARKERS = [
-  /\bfor\s+[a-z][\w'-]+(?:\s+(?:who|and|&|with|without)\s+[\w'-]+){0,3}\b/i,
+  /\bfor\s+(?:(?:a|an|the)\s+)?(?!(?:free|only|just|less|more|now|today|ever|life|good|real|sale|instance|example|limited|while|everyone|anyone|everybody|all|you)\b)[a-z][\w'-]+(?:\s+(?:who|and|&|with|without)\s+[\w'-]+){0,3}\b/i,
   /\b(?:business|person|is anyone)s?\b.*\bwho\b/i,
 ];
 
@@ -128,7 +129,10 @@ const CTA_MARKERS = [
   /\blearn more\b/i,
 ];
 
-const URGENCY_MARKERS = [/ends/i, /deadline/i, /\bby (?:friday|monday|tonight|midnight|tomorrow)\b/i, /\blimited\b/i, /\bseats?\s\w*\s?left\b/i, /\btoday only\b/i, /\bfinal notice\b/i];
+const URGENCY_MARKERS = [/\bends\b/i, /deadline/i, /\bby (?:friday|monday|tonight|midnight|tomorrow)\b/i, /\blimited\b/i, /\bseats?\s\w*\s?left\b/i, /\btoday only\b/i, /\bfinal notice\b/i];
+
+/** Whole-word match (plurals allowed), so "app" doesn't fire on "happy" or "book" on "facebook". */
+const DELIVERABLE_PATTERNS = DELIVERABLE_WORDS.map((w) => new RegExp(`\\b${w}(?:s|es)?\\b`, "i"));
 
 /* ------------------------------------------------------------------ */
 /* main                                                                */
@@ -145,18 +149,18 @@ export function scoreOffer(input: OfferInput): OfferScore {
   const hasPrice = PRICE_PATTERNS.some((p) => p.test(offer));
   if (hasPrice) clarity += 10;
   else flags.push("no-price");
-  const hasDeliverable = DELIVERABLE_WORDS.some((w) => bundle.toLowerCase().includes(w));
+  const hasDeliverable = DELIVERABLE_PATTERNS.some((p) => p.test(bundle));
   if (hasDeliverable) clarity += 6;
   else flags.push("no-concrete-deliverable");
   const vaguenessHits = VAGUE_WORDS.filter((v) => offer.toLowerCase().includes(v));
-  if (vaguenessHits.length) clarity += 0;
-  else clarity += 4;
+  if (!vaguenessHits.length) clarity += 4;
   if (words < 8) flags.push("too-thin");
   if (words > 120) flags.push("unfocused-length");
 
   /* 2. audience specificity (24) -------------------------------------- */
   let audiencePts = 0;
-  const namedAudience = AUDIENCE_MARKERS.some((p) => p.test(bundle)) || /audience/i.test(input.audience ?? "");
+  // an explicit audience statement is, by definition, a named segment
+  const namedAudience = AUDIENCE_MARKERS.some((p) => p.test(bundle)) || (input.audience ?? "").trim().length >= 3;
   if (namedAudience) audiencePts += 12;
   else flags.push("unclear-audience");
   if (SECOND_PERSON.test(offer)) audiencePts += 6;
@@ -191,7 +195,9 @@ export function scoreOffer(input: OfferInput): OfferScore {
       dimension: "offer clarity",
       points: clarity,
       max: 20,
-      notes: hasPrice ? "price or explicit 'free' present" : "no price token found",
+      notes:
+        [hasPrice ? "price or explicit 'free' present" : "no price token found", hasDeliverable ? "concrete deliverable named" : "no concrete deliverable"].join("; ") +
+        (vaguenessHits.length ? `; vague words: ${vaguenessHits.join(", ")}` : ""),
     },
     {
       dimension: "audience specificity",
@@ -203,7 +209,7 @@ export function scoreOffer(input: OfferInput): OfferScore {
       dimension: "differentiation",
       points: differentiation,
       max: 20,
-      notes: `${differentiation}/20 from uniqueness/mechanism/contrast markers` + (vaguenessHits.length ? ` (vague words: ${vaguenessHits.join(", ")})` : ""),
+      notes: `${differentiation}/20 from uniqueness/mechanism/contrast markers`,
     },
     {
       dimension: "proof & risk reversal",
