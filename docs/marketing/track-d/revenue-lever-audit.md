@@ -74,16 +74,25 @@ behavior (a few weeks of suggested-price data).
 
 ## Recommended immediate actions (this week)
 
-1. Set **suggested amount $5** on the checklist (5 min, reversible).
-2. Enable the **checklist → Starter checkout upsell** (10 min).
-3. Add the one-line Starter pointer to the checklist's receipt text.
+1. ~~Set **suggested amount $5** on the checklist (5 min, reversible).~~
+   **APPLIED 2026-10-21:** set in the product editor, reload-persistent,
+   buyer-facing `$5+` placeholder verified on the live checkout (listing price
+   still reads $0+, $0 still allowed).
+2. Enable the **checklist → Starter checkout upsell** (10 min). — still open.
+3. ~~Add the one-line Starter pointer to the checklist's receipt text.~~
+   **APPLIED 2026-10-21:** custom receipt message (379/500 chars) saved on the
+   product's Receipt tab — "Score an offer before you spend…" + the Starter
+   URL with `utm_source=gumroad-receipt&utm_campaign=starter-launch`.
+   Reload-persistent and visible in the Receipt tab's rendered preview inside
+   the buyer email (above "View content").
 4. Re-run the earnings poller after the first real visitor day; compare
    average order value before/after Lever A.
 
 ## Verification log (what was actually checked)
 
 - Checklist edit page: PWYW on, suggested EMPTY, minimum $0, installments
-  off (read from the editor DOM, today).
+  off (read from the editor DOM, today). **Update 2026-10-21: suggested now
+  = $5 (see Applied above) — the empty-field reading earlier in this bullet is historical.**
 - Starter edit page: PWYW off; no Discover toggle on either product.
 - `settings/discover` and `discover/sell`: 404 in this account.
 - Discover fee 30% / direct 10% + 50¢: confirmed from Gumroad's live pricing
