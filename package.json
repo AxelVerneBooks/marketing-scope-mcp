@@ -4,6 +4,27 @@
   "description": "MCP server for marketing campaign workflows: plan campaigns, score offers explainably, and build/verify plans where every tactic cites a scored offer.",
   "type": "module",
   "license": "MIT",
+  "author": "Axel Verne (https://axelverne.com)",
+  "homepage": "https://github.com/AxelVerneBooks/marketing-scope-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AxelVerneBooks/marketing-scope-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AxelVerneBooks/marketing-scope-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "marketing",
+    "campaign-planning",
+    "offer-scoring",
+    "claude"
+  ],
+  "bin": {
+    "marketing-scope-mcp": "dist/index.js"
+  },
   "files": [
     "dist",
     "README.md",
@@ -16,14 +37,21 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http --port 3002",
-    "test": "npm run build && node --test test/server.test.mjs"
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.0",
-    "typescript": "^5.7.0"
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.72.0"
   }
 }
