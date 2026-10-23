@@ -88,3 +88,11 @@ Data dir (plans on disk) defaults to `./data`; override with
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+Prefer it prebuilt? [Campaign Pre-Flight Starter Kit](https://alohahilo.gumroad.com/l/marketing-scope-starter?utm_source=github&utm_medium=readme&utm_campaign=starter-launch&utm_content=readme-pointer) —
+the built server plus one worked campaign run and the 4-step setup, $9,
+MIT, free lifetime updates. The [one-page scoring rubric](https://alohahilo.gumroad.com/l/offer-scoring-checklist?utm_source=github&utm_medium=readme&utm_campaign=starter-launch&utm_content=readme-checklist-fallback)
+it enforces is free, no email wall. (Disclosure: I built and sell both;
+these are my links.)
