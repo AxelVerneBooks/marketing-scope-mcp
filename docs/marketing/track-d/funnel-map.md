@@ -81,10 +81,10 @@ posts. All times/spacings inherit `drip-campaign.md` (72h same-channel rule,
 
 | # | Door | State | Where it sends people | UTM shape |
 |---|------|-------|----------------------|-----------|
-| D1 ⚙ | **TikTok bio → /buy/** | set BEFORE recording video 1 (S5 pre-check) | hub | `source=tiktok&medium=profile-or-bio&campaign=evergreen`(supersedes drip's homepage-anchor bio; /buy/ now carries the funnel) |
-| D2 ⚙ | **X profile bio/pinned → /buy/** | unchanged evergreen | hub | `source=x&medium=profile-or-bio&campaign=evergreen` |
-| D3 ⚙ | **LinkedIn profile sites/greeting → /buy/** | one-time set | hub | `source=linkedin&medium=profile-or-bio&campaign=evergreen` |
-| D4 ⚙ | **Gumroad profile header link → /buy/** (storefront parity) | one-time set | hub | `source=gumroad&medium=profile-or-bio&campaign=evergreen` |
+| D1 ⚙ | **TikTok bio → /buy/** | strings ready (funnel-map §7) — set BEFORE recording video 1 (S5 pre-check) | hub | `source=tiktok&medium=profile-or-bio&campaign=evergreen`(supersedes drip's homepage-anchor bio; /buy/ now carries the funnel) |
+| D2 ⚙ | **X profile bio/pinned → /buy/** | strings ready (funnel-map §7) | hub | `source=x&medium=profile-or-bio&campaign=evergreen` |
+| D3 ⚙ | **LinkedIn profile sites/greeting → /buy/** | strings ready (funnel-map §7) — one-time set | hub | `source=linkedin&medium=profile-or-bio&campaign=evergreen` |
+| D4 ⚙ | **Gumroad profile header link → /buy/** (storefront parity) | strings ready (funnel-map §7) — one set | hub | `source=gumroad&medium=profile-or-bio&campaign=evergreen` |
 | D5 ⚙ | **GitHub book-repo README** (mcp-for-homelab-companion) | E3 — already planned in kit | book page (kit §0) | `source=github&medium=readme&campaign=companion-repo` |
 | D6 | **Quora A1–A3** | pre-approved, ≤3/wk (kit) | book pages, sample chapters | per-question `q3/q4/q5` campaigns |
 | D7 | **Reddit r/selfhosted** (one-time MCP-homelab value comment) | approved once (kit §2) | no link in-body; bio carries hub | none in comment; bio UTM does the work |
@@ -172,3 +172,118 @@ Ranked by expected marginal value per hour, given 0 sales so far
 - "Free AdSense money on the site" gets re-examined at the Month-1 review if
   books traffic alone justifies it; parked until then to protect the brand's
   no-ads story.
+
+## 7. Bio strings (paste-ready) — doors D1–D4 + Shorts bonus · prepared 2026-10-23
+
+Every destination is the evergreen hub URL. Counts below are exact (counted
+programmatically the day they were written); re-count if you edit a word.
+
+### D1 — TikTok (`@alphafuturesclipshi`, repurposed as Axel Verne)
+
+Bio text field — **79 of 80 chars**, fits without a trim:
+
+
+```text
+Practical AI tools & agents · free scoring rubric + $9 kit · axelverne.com/buy
+```
+
+
+If the account is switched to Business (free) and the **Website** field
+becomes available, use the full UTM URL there and a shorter 69-char bio:
+
+```text
+Practical AI tools & agents · free scoring rubric · axelverne.com/buy
+```
+
+```text
+https://axelverne.com/buy/?utm_source=tiktok&utm_medium=profile-or-bio&utm_campaign=evergreen
+```
+
+
+Honest caveats: personal accounts without 1k followers don't get a clickable
+website field (Business accounts get domain-linked sites; axelverne.com must
+be verified in TikTok Business settings first). Either way the domain is
+visible text even when it isn't a link. This bio is the S5 pre-check — set it
+BEFORE recording video 1. Username lock on `@alphafuturesclipshi` expired
+2026-10-22; `@axelverne.ai` was free at last check, but a rename would orphan
+the account row in ACCOUNTS.md — if you rename, update that file.
+
+### D2 — X (160-char bio)
+
+**133 of 160 chars**:
+
+```text
+MCP books + free tools. The one-page offer-scoring rubric is free; the $9 starter kit runs it for you. Everything: axelverne.com/buy
+```
+
+
+Plain domain in the bio (it t.co-links automatically). The account itself
+(own handle vs. existing Clipjitsu) is still Jason's call per the social kit
+§3 gate — paste-ready either way. Optional pinned post after the account
+decision: use X thread S1's final-post shape, evergreen timing.
+
+### D3 — LinkedIn (Jason's profile, manual)
+
+Headline (up to 220) — **138 chars**:
+
+```text
+Practical AI + MCP: books, the free offer-scoring rubric, and the $9 kit that automates it — tools & books on one page: axelverne.com/buy
+```
+
+
+Two placement notes: LinkedIn parses the URL automatically in headline AND
+contact info; also add the hub under **Contact info → Website** (type Personal)
+with the full UTM URL, and to the **Featured** section as a titled card:
+
+```text
+https://axelverne.com/buy/?utm_source=linkedin&utm_medium=profile-or-bio&utm_campaign=evergreen
+```
+
+Optional featured-card title: "Free scoring rubric + starter kits — one page".
+LinkedIn posts (S3) keep their own `campaign=starter-launch` in-post UTMs —
+the bio stays evergreen, per §4's rule (bios outlive launches, posts don't).
+
+### D4 — Gumroad storefront (storefront parity, one-time)
+
+Where it goes: gumroad.com/profile → **Bio** field (verified live 2026-10-23:
+the profile settings offer Name + Bio only, no dedicated links field — the
+URL rides as text at the end of the bio, appended below the existing
+Hermes-perspective paragraph, which stays untouched):
+
+```text
+All tools, starter kits & books on one page: axelverne.com/buy
+```
+
+(Existing bio is 388 chars with no enforced maxlength on the field; + 62 =
+450, still small enough that a platform-side cap (if one exists) won't bite.
+Paste it AFTER the existing Hermes-perspective paragraph, a blank line
+between — that paragraph stays untouched.) Honest caveat: whether Gumroad's
+profile page linkifies URL text in the bio wasn't verified this pass; either
+way buyers who Google the domain land on the hub. If the bio ever renders as
+a live link, use the tagged URL so the traffic stays attributable:
+
+```text
+https://axelverne.com/buy/?utm_source=gumroad&utm_medium=profile-or-bio&utm_campaign=evergreen
+```
+
+The plain domain is fine when the bio stays plain text — the tagged version
+only matters once links actually pass.
+
+One misuse guard: never paste `axelverne.gumroad.com` — that subdomain is a
+dead 404 (documented in ACCOUNTS.md); the store lives at
+`alohahilo.gumroad.com`.
+
+### D11 prep — YouTube channel bio (the Shorts-crosspost door)
+
+```text
+https://axelverne.com/buy/?utm_source=youtube&utm_medium=profile-or-bio&utm_campaign=evergreen
+```
+
+`source=youtube` covers both channel and Shorts crossposts (D11) — one tag,
+however the Short was reached.
+
+Paste order recommendation: D1 first (hard gate — video 1 records 10-27),
+then D4, D2, D3. One-line disclosure reminder: TikTok/X/LinkedIn posts of
+Launch-Kit content disclose authorship per campaign rules; a bio line listing
+your own products is implicit authorship, no extra disclosure needed there.
+
