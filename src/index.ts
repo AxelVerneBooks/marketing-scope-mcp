@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 /**
- * marketing-scope-mcp — MCP server (v0.1.0)
+ * marketing-scope-mcp — MCP server (v0.1.1)
  *
  * Marketing campaign workflow: plan a campaign with kill criteria, score
  * candidate offers explainably (0–100), assemble a campaign-plan shell with an

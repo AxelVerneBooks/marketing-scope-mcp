@@ -6,8 +6,9 @@ Carry-over lessons from research-scope-mcp publish day (see that project's memor
    `io.github.AxelVerneBooks/marketing-scope-mcp` (camelCase to match the
    OAuth login exactly) or the registry returns 403.
 2. **No placeholder remotes.** Never publish a `remotes[]` entry like
-   `https://YOUR_HOST`. If realm isn't hosted yet, omit `remotes[]` and omit
-   `packages[]` (registry validates declared npm identifiersintér exist).
+   `https://YOUR_HOST`. Declared `packages[]` must already exist: publish the
+   npm version (with matching `mcpName`) *before* `mcp-publisher publish`.
+   Exact release commands live in the README's **Publishing** section.
 3. **Device-code login is user-gated.** The user runs
    `~/bin/mcp-publisher login github`, says "code showing", types the code in
    the browser — the code never appears in chat or files.

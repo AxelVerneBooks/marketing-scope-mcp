@@ -1,12 +1,35 @@
 {
   "name": "marketing-scope-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "mcpName": "io.github.AxelVerneBooks/marketing-scope-mcp",
   "description": "MCP server for marketing campaign workflows: plan campaigns, score offers explainably, and build/verify plans where every tactic cites a scored offer.",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/AxelVerneBooks/marketing-scope-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AxelVerneBooks/marketing-scope-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AxelVerneBooks/marketing-scope-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "marketing",
+    "campaign",
+    "offer-scoring",
+    "ai-agents"
+  ],
+  "bin": {
+    "marketing-scope-mcp": "dist/index.js"
+  },
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
     "server.json"
   ],
   "engines": {
@@ -16,7 +39,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http --port 3002",
-    "test": "npm run build && node --test test/server.test.mjs"
+    "test": "npm run build && node --test test/server.test.mjs",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.0",
