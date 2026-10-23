@@ -113,6 +113,100 @@ site's MCP-tools anchor or the /buy/ master page. UTM `utm_medium=tiktok-vid`.)*
 
 ---
 
+## 3b. YouTube Shorts crosspost of video 1 — Tue 10-27, same day as TikTok S5
+
+Same vertical file uploads unchanged — Shorts takes ≤60s and the beat sheet is
+30–35s, so **no re-edit is needed**. What changes is where the funnel exits:
+Shorts descriptions do NOT render clickable links (and neither do Shorts
+pinned comments in the current build), so the only clickable door is the
+**channel page → About → Links row** — that is door D11, and it must be set
+BEFORE upload. Everything below is paste-ready; counts counted programmatically.
+
+Beat-sheet delta (§3 spoken beats carry over 1:1):
+
+| Beat | TikTok version | Shorts version |
+|---|---|---|
+| 0–3s hook / 3–28s body | unchanged | unchanged |
+| 20–28s free-rubric beat | "Print it, tape it to your monitor." | unchanged — but the on-screen line can also read "rubric in the channel bio" |
+| 28–35s close | "Links in bio 🧰" (caption) | spoken: **"The free rubric — it's at the top of my channel page."** |
+
+**Title** (≤100 chars) — pick one:
+
+```text
+The most expensive sentence in advertising: "let's just try it and see."
+```
+
+(72 chars — reuses the spoken hook as the search-text; Shorts search reads titles.)
+
+```text
+Your launch plan has a pre-flight problem — score the offer first
+```
+
+(65 chars — the angle for a rerun later in the month, not for the first upload.)
+
+**Description** (396 chars):
+
+```text
+Every failed launch has the same autopsy: no kill criteria, no offer score, tactics with no metric to lose. The free one-page rubric is the rulebook — print it. The $9 Campaign Pre-Flight Starter Kit is the machine that enforces it: marketing-scope-mcp prebuilt, one worked campaign run, MIT. I built it — disclosure: links are mine. The free rubric is in the channel bio (About → Tools & Books).
+```
+
+**Pinned comment** (156 chars — text-only; keeps the promise visible without
+a dead link):
+
+```text
+The free rubric from the video is linked at the top of my channel page (About → Tools & Books) — no email wall. The $9 kit that runs it is on the same page.
+```
+
+Hashtags: none beyond what the title/description naturally carries — Shorts
+identification is automatic and the channel's two tags-worthy terms (#MCP,
+#AIAgents) can ride in the description tail if desired; do not add a #Shorts
+hashtag (obsolete formality).
+
+### Shorts bio setup (set D11 FIRST — before the upload)
+
+Where to paste them: **channel About description** + **Links row** in
+youtube.com → Customization → Channel customization → Basic info. The About
+description first:
+
+```text
+Practical AI, agents & MCP — machines, not books. Free one-page offer-scoring rubric + the $9 kit that automates it · axelverne.com/buy
+```
+
+(135 chars, far under the 1000 cap — though an About description often shows
+only as a read-only strip, so add the **Links** row too — same page, five
+slots, all currently unused.)
+
+Title (26 chars):
+
+```text
+Tools & Books — start here
+```
+
+URL — the D11 evergreen door from funnel-map §7 (94 chars, one tag serving
+both the channel and any later Shorts):
+
+```text
+https://axelverne.com/buy/?utm_source=youtube&utm_medium=profile-or-bio&utm_campaign=evergreen
+```
+
+After upload: pin the comment IMMEDIATELY (first minutes drive the
+pinned-comment shelf on Shorts).
+
+**Timing:** mirror S5's window (Tue ~8:00 p.m. ET / ~2:00 p.m. HST) — a fresh
+crossposted Upload into a new channel has no 72h conflict (funnel-map
+§2, D11: "free parallel reach"; drip rule binds per channel, not per asset).
+
+Consistency checks before clicking Publish (collect these into one pass):
+
+- [ ] Channel About description + Links row match the strings above (D11 set)
+- [ ] Same-file vertical video uploads clean (9:16, ≤60s)
+- [ ] Title A present; description 396-char block pasted; disclosure line intact
+- [ ] Pinned comment set within the first minutes
+- [ ] TikTok bio (D1, funnel-map §7) already carrying the hub — drip S5's
+      old homepage-anchor bio line is superseded; if the TikTok caption is
+      posted as written ("Links in bio 🧰"), the live bio must show the A
+      variant when a viewer lands
+
 ## 4. LinkedIn / developer-audience short post
 
 Prior versions of tool launches here died from one thing: proving a plan was

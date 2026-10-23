@@ -91,7 +91,7 @@ posts. All times/spacings inherit `drip-campaign.md` (72h same-channel rule,
 | D8 | **X posts** — A2 thread (S1) + A3 standalone (S7) | drafted, scheduled | checklist/Starter | `campaign=starter-launch`, `utm_content=x-p4` / `x-standalone` |
 | D9 | **LinkedIn post** (S3) | drafted | Starter via first comment | `content=li-dev` |
 | D10 | **TikTok video 1** (S5) | drafted; beat sheet ready | bio → hub (D1) | none in caption (caption stays link-free) |
-| D11 | **YouTube Shorts crosspost** of TikTok video 1 | NEW — free organic reach | channel bio → hub | `source=youtube&medium=shorts-bio&campaign=evergreen` |
+| D11 | **YouTube Shorts crosspost** of TikTok video 1 | adapted + post-ready (launch-push-drafts §3b; URL string ready §7 below) — 10-27, same window as S5 | channel bio → hub | `source=youtube&medium=profile-or-bio&campaign=evergreen`(§7's `source=youtube` URL — one tag covers channel + Shorts; the earlier `shorts-bio` medium here is superseded) |
 | D12 ⚙ | **IndexNow ping** (/buy/ + free pages) | working; ping after each meaningful change | search bots, not humans | n/a |
 | D13 | **Free checklist PDF** (Gumroad, $0+, $5 suggested) | LIVE 10-21 | Starter pointer on receipt | `source=gumroad-receipt&campaign=starter-launch` |
 | D14 ⚙ | **Checklist→Starter checkout upsell** | **still open** (lever audit #2) — one click on Gumroad, highest-conversion spot of all | Starter card-out customers | n/a (on-platform) |

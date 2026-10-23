@@ -14,6 +14,7 @@ Assets inventory (what exists now):
 | A5 | LinkedIn developer post | `launch-push-drafts.md` §4 | drafted, unposted |
 | A6 | Earnings poller (stdin mode) | `~/Desktop/newproject/tools/gumroad-earnings-poll.py` | working (2 rows) |
 | A7 | Baseline ledger row | track-d/earnings-ledger.csv | row 2 @ 2026-10-21 20:06Z ($0 / $100 distance) |
+| A8 | Shorts crosspost kit (title/desc/pinned comment + D11 channel strings) | `launch-push-drafts.md` §3b | drafted 10-23, post-ready 10-27 |
 
 Funnel rule that governs the drip (from the drafts): the **free one-page
 checklist is the hook** everywhere hard selling is unwelcome; the **$9
@@ -32,7 +33,7 @@ Starter is the ask** where commerce is expected. Never flip that order.
 | S2 | Sat **10-24 · morning HST** | Poller + site | Copy-line check: poll 3, log row; check strip clicks via CF analytics if visible | A6/A1 | — | — |
 | S3 | Mon **10-26 · ~6:30 a.m. HST** (= Mon 12:30 p.m. ET — LI midday peak) | LinkedIn | **A5 developer post** (ends in a question, no hard CTA) | A5 | link in comment, not body: `utm_source=linkedin&utm_medium=comment&utm_campaign=starter-launch&utm_content=li-dev` (links-in-comment keeps LI reach; disclosure in post body) | resume-visibility sanity: post from personal profile, not a page |
 | S4 | Mon 10-26 · evening | X | engage replies on A2 (<48h), value-only, no new links | — | — | — |
-| S5 | Tue **10-27 · ~2:00 p.m. HST** (= Tue 8:00 p.m. ET — US TikTok evening peak; slot is a convention, adjust from observed engagement) | TikTok | **A4 video 1** ("the referee, not another copywriter") + caption | A4 | **caption has no link** — bio must carry it: set bio to `https://axelverne.com/#mcp-tools?utm_source=tiktok&utm_medium=bio&utm_campaign=starter-launch&utm_content=tiktok-bio` BEFORE recording | bio updated first; caption drafts say "links in bio 🧰" — match the live bio or reword |
+| S5 | Tue **10-27 · ~2:00 p.m. HST** (= Tue 8:00 p.m. ET — US TikTok evening peak; slot is a convention, adjust from observed engagement) | TikTok + YouTube Shorts crosspost | **A4 video 1** ("the referee, not another copywriter") + caption | A4 + A8 | **caption has no link** — bio must carry it (hub): use funnel-map §7 D1 evergreen bio (79/80 chars, supersedes the homepage-anchor line below) BEFORE recording | bio updated first; caption drafts say "links in bio 🧰" — match the live bio or reword; Shorts copy + D11 channel-link setup pre-uploaded via launch-push §3b (fresh channel ⇒ no 72h conflict, same window) |
 | S6 | Wed **10-28** | Poller | poll 4 | A6 | — | — |
 | S7 | Fri **10-30 · ~9:30 a.m. HST** | X | **A3 standalone** (fresh hook, not a thread rerun) | A3 | both links in one post: `utm_content=x-standalone` (Starter) + `utm_content=x-standalone-checklist` (fallback); disclosure line | re-verify listings 200 (prices can drift) |
 | S8 | Sat 10-31 | Poller | poll 5 + **first-sales retrospective**: net/sale from fee line-items vs $7.04 plan | A6 | — | — |
