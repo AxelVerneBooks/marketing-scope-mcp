@@ -3,10 +3,31 @@
   "name": "io.github.AxelVerneBooks/marketing-scope-mcp",
   "title": "Marketing Scope",
   "description": "Plan campaigns, score offers explainably, and enforce offer-cited tactics before spending.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "websiteUrl": "https://axelverne.com/",
   "repository": {
     "url": "https://github.com/AxelVerneBooks/marketing-scope-mcp",
     "source": "github"
-  }
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "marketing-scope-mcp",
+      "version": "0.1.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MARKETING_SCOPE_DATA_DIR",
+          "description": "Directory where campaign plans are written (defaults to ./data in the working directory).",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "filepath"
+        }
+      ]
+    }
+  ]
 }

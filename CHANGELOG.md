@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1 — unreleased
+
+Distribution packaging; no tool behaviour changes.
+
+- `npx -y marketing-scope-mcp` now runs the stdio server directly (`bin`
+  entry + shebang)
+- `mcpName` in package.json and an npm `packages[]` entry in `server.json`
+  so the official MCP Registry can verify the package
+- `smithery.yaml` (container runtime, Streamable HTTP)
+- Dockerfile moved to the repo root; HTTP port now follows `$PORT`
+  (default 3002); image carries the `io.modelcontextprotocol.server.name` label
+
 ## 0.1.0 — 2026-10-20
 
 Initial public release.
