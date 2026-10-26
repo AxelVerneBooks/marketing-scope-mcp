@@ -1,0 +1,18 @@
+$ node examples/04-http-transport.mjs
+
+=== client A connects to http://127.0.0.1:3102/mcp ========================
+[server stderr] marketing-scope-mcp 0.1.0 listening (Streamable HTTP) on http://0.0.0.0:3102/mcp
+server: {"name":"marketing-scope-mcp","version":"0.1.0"}
+- plan_campaign: Plan a campaign
+- score_offer: Score an offer
+- build_plan: Build campaign-plan shell
+- check_plan: Check plan tactic coverage
+
+=== client A: score_offer =================================================
+70/100 (B) offerId=o-f552 flags=none
+
+=== client B (new connection): build_plan with client A's offer ===========
+isError: false
+Offer registry:
+[O1] A 6-week Spanish course for travel nurses, $59 — unlike apps, every lesson is hospital vocabulary you will use on shift. Money-back guarantee. Enroll today. (70/100, B)
+Cite these [On] numbers from every tactic and give each a success metric, then run check_plan.

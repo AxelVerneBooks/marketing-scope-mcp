@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "marketing-scope": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/marketing-scope-mcp/dist/index.js"],
+      "env": { "MARKETING_SCOPE_DATA_DIR": "/ABSOLUTE/PATH/TO/marketing-scope-data" }
+    }
+  }
+}

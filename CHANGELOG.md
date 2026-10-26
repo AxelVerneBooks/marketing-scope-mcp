@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `examples/`: four end-to-end scripts driving the server through the MCP SDK
+  client (full pipeline, offer iteration, gate failures, Streamable HTTP),
+  with their real output saved under `examples/output/`
+- `examples/clients/`: drop-in stdio configs for Claude Desktop, Claude Code
+  and Cursor, plus a ready-to-paste prompt in `examples/README.md`
+- `npm run examples`: builds and reruns every example, rewriting its output
+- README: Quickstart section linking to the examples; author line
+
 ## 0.1.0 — 2026-10-20
 
 Initial public release.

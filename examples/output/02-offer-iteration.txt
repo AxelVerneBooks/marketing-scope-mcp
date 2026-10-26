@@ -1,0 +1,43 @@
+$ node examples/02-offer-iteration.mjs
+
+=== Draft 1 — the usual first draft =======================================
+offer: World-class, cutting-edge website solutions that leverage synergy.
+0/100 (D)  flags: no-price, no-concrete-deliverable, too-thin, unclear-audience, no-uniqueness-marker, no-proof, no-cta
+  offer clarity           0/20  no price token found
+  audience specificity    0/24  no named segment; offer could be for anyone
+  differentiation         0/20  0/20 from uniqueness/mechanism/contrast markers (vague words: world-class, cutting-edge, synergy, solutions, leverage)
+  proof & risk reversal   0/20  no guarantee, testimonial, or countable proof found
+  call to action          0/16  no actionable verb
+
+=== Draft 2 — say what it is and what it costs ============================
+offer: A website speed audit, $149, delivered as a written report.
+20/100 (D)  flags: unclear-audience, no-uniqueness-marker, no-proof, no-cta
+  offer clarity          20/20  price or explicit 'free' present
+  audience specificity    0/24  no named segment; offer could be for anyone
+  differentiation         0/20  0/20 from uniqueness/mechanism/contrast markers
+  proof & risk reversal   0/20  no guarantee, testimonial, or countable proof found
+  call to action          0/16  no actionable verb
+
+=== Draft 3 — name who it is for and why it differs =======================
+offer: A website speed audit for Shopify store owners, $149 — unlike plugin scanners, a human tests your checkout on a real phone. Written report in 48 hours.
+48/100 (C)  flags: no-proof, no-cta
+  offer clarity          20/20  price or explicit 'free' present
+  audience specificity   18/24  named segment found in offer/audience
+  differentiation        10/20  10/20 from uniqueness/mechanism/contrast markers
+  proof & risk reversal   0/20  no guarantee, testimonial, or countable proof found
+  call to action          0/16  no actionable verb
+
+=== Draft 4 — add risk reversal and a call to action ======================
+offer: A website speed audit for Shopify store owners, $149 — unlike plugin scanners, a human tests your checkout on a real phone because that is where carts die. Full refund if we find nothing you can fix. Book yours today; 5 slots left this week.
+76/100 (B)  flags: none
+  offer clarity          20/20  price or explicit 'free' present
+  audience specificity   18/24  named segment found in offer/audience
+  differentiation        16/20  16/20 from uniqueness/mechanism/contrast markers
+  proof & risk reversal  12/20  guarantee or social-proof evidence found
+  call to action         10/16  imperative CTA present
+
+=== Summary vs. kill criterion (STOP below 45) ============================
+Draft 1 — the usual first draft                      0/100 D  STOP — rework
+Draft 2 — say what it is and what it costs          20/100 D  STOP — rework
+Draft 3 — name who it is for and why it differs     48/100 C  ok to plan
+Draft 4 — add risk reversal and a call to action    76/100 B  ok to plan
