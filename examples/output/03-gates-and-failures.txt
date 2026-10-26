@@ -1,0 +1,59 @@
+$ node examples/03-gates-and-failures.mjs
+
+=== 1. build_plan with an offer that was never scored -> refused ==========
+isError: true
+These offers were never scored — run score_offer on them first:
+Meal plans for busy people, sign up now.
+
+=== 2. build_plan with only scored offers -> shell written ================
+Campaign shell 5f95b4b8 saved to /tmp/marketing-scope-example-BYmouX/campaigns/campaign-5f95b4b8.md
+
+=== 3. a plan with an orphan tactic and an unmeasured tactic -> FAIL ======
+{
+  "plan": "/tmp/marketing-scope-example-BYmouX/campaigns/campaign-5f95b4b8.md",
+  "pass": false,
+  "tacticsFound": 2,
+  "tacticsCited": 1,
+  "tacticsMeasured": 0,
+  "orphanTactics": [
+    {
+      "tactic": "Run Instagram ads at a broad lookalike audience of everyone interested in food",
+      "tacticId": "T1",
+      "offerRefs": [],
+      "hasMetric": false
+    }
+  ],
+  "unmeasuredTactics": [
+    {
+      "tactic": "Run Instagram ads at a broad lookalike audience of everyone interested in food",
+      "tacticId": "T1",
+      "offerRefs": [],
+      "hasMetric": false
+    },
+    {
+      "tactic": "Post three TikToks a week showing a break-room reheat of  recipes",
+      "tacticId": "T2",
+      "offerRefs": [
+        "O1"
+      ],
+      "hasMetric": false
+    }
+  ],
+  "verdict": "FAIL — fix orphan/unmeasured tactics above before spending money"
+}
+
+=== 4. fix both tactics -> PASS ===========================================
+{
+  "plan": "/tmp/marketing-scope-example-BYmouX/campaigns/campaign-5f95b4b8.md",
+  "pass": true,
+  "tacticsFound": 2,
+  "tacticsCited": 2,
+  "tacticsMeasured": 2,
+  "orphanTactics": "none",
+  "unmeasuredTactics": "none",
+  "verdict": "PASS — every tactic cites a scored offer and names a metric"
+}
+
+=== 5. note: check_plan(plan_id) checks the stored shell, not your edits ==
+check_plan(plan_id: "5f95b4b8") -> pass: false, tacticsFound: 0
+Pass plan_path after editing the markdown file.

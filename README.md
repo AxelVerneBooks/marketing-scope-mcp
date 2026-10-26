@@ -7,6 +7,29 @@ scored offer **and** names a success metric — *before* any money is spent.
 The sibling of [`research-scope-mcp`](https://github.com/AxelVerneBooks/research-scope-mcp)
 (sources → citations) applied to marketing: tactics → scored offers.
 
+By [Axel Verne](https://axelverne.com), author of *MCP for Business*.
+
+## Quickstart
+
+```bash
+git clone https://github.com/AxelVerneBooks/marketing-scope-mcp
+cd marketing-scope-mcp && npm install
+npm run examples        # builds, runs every example, saves real output to examples/output/
+```
+
+Then connect a client and try the workflow yourself:
+
+- **Claude Desktop / Claude Code / Cursor setup:** [examples/README.md](examples/README.md#using-it-from-claude-desktop-claude-code-and-cursor),
+  with drop-in configs in [examples/clients/](examples/clients/) and a prompt to paste in.
+- **[01 — full pipeline](examples/01-quickstart-full-pipeline.mjs)**: plan → score → build → check, FAIL to PASS
+  ([output](examples/output/01-quickstart-full-pipeline.txt))
+- **[02 — offer iteration](examples/02-offer-iteration.mjs)**: one offer rewritten from 0/100 to 76/100
+  against the kill criterion ([output](examples/output/02-offer-iteration.txt))
+- **[03 — gates and failures](examples/03-gates-and-failures.mjs)**: unscored offers, orphan and unmeasured
+  tactics, and how to fix them ([output](examples/output/03-gates-and-failures.txt))
+- **[04 — HTTP transport](examples/04-http-transport.mjs)**: two clients over Streamable HTTP sharing one
+  score registry ([output](examples/output/04-http-transport.txt))
+
 ## The discipline
 
 ```
