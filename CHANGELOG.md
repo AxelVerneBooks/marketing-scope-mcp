@@ -1,5 +1,17 @@
 # Changelog
 
+All notable changes to this project are documented here. Add entries under
+**Unreleased** as part of your PR; the release workflow turns that section into
+a versioned heading.
+
+## Unreleased
+
+- Contributor infrastructure: `CONTRIBUTING.md`, issue and PR templates, and a
+  manual release workflow (version bump + CHANGELOG roll + `npm pack` dry-run;
+  never publishes)
+- `scripts/bump-version.mjs` keeps `package.json`, `package-lock.json`,
+  `server.json`, and `src/version.ts` in lockstep
+
 ## 0.1.0 — 2026-10-20
 
 Initial public release.
