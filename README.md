@@ -85,9 +85,16 @@ Data dir (plans on disk) defaults to `./data`; override with
 > check_plan(...)   # orphan tactics → error list; metric-less → flagged
 ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, coding style, and how to run
+the tests.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+By Axel Verne, author of *MCP for Business* — [axelverne.com](https://axelverne.com).
 
 ---
 
