@@ -85,6 +85,42 @@ Data dir (plans on disk) defaults to `./data`; override with
 > check_plan(...)   # orphan tactics → error list; metric-less → flagged
 ```
 
+## Error Handling
+
+Every failure below comes back as a normal MCP tool result with
+`isError: true` and a text message — the JSON-RPC call itself succeeds, so
+check `isError`, not just for a protocol error. Each case is pinned by
+[`test/integration.test.mjs`](test/integration.test.mjs), which runs the built
+server with outbound network blocked (the server makes no network calls).
+
+| Case | What you get |
+| --- | --- |
+| Argument fails the schema (offer under 12 chars, goal under 3, empty `offers`, missing `objective`) | `MCP error -32602: Input validation error: ...` naming the field |
+| Unknown tool name | `MCP error -32602: Tool <name> not found` |
+| `build_plan` with any offer not scored by `score_offer` | `These offers were never scored — run score_offer on them first:` plus the offending texts. The whole call is refused; nothing is written. |
+| `build_plan` offer text differs in case or wording from what was scored | Treated as unscored. Matching is exact after trimming surrounding whitespace. |
+| `build_plan` when the data dir can't be created or written (e.g. `MARKETING_SCOPE_DATA_DIR` points at a file) | The raw Node error, e.g. `ENOTDIR: not a directory, mkdir ...` |
+| `check_plan` with neither `plan_id` nor `plan_path` | `Provide either plan_id (from build_plan) or plan_path.` |
+| `check_plan` with an unknown or expired `plan_id` | The **same** message as above — it does not say the id is unknown. |
+| `check_plan` with a `plan_path` that doesn't exist | `Plan file not found: <absolute path>` |
+| `check_plan` with a `plan_path` that is a directory | The raw Node error `EISDIR: illegal operation on a directory, read` |
+| HTTP: body is not valid JSON | HTTP 400, JSON-RPC error `-32700` (`Parse error: Invalid JSON`) |
+| HTTP: `Accept` header lacks `application/json, text/event-stream` | HTTP 406, `Not Acceptable: ...` |
+
+Cases that are **not** errors but often look like one:
+
+- **Restarts lose state.** Scores and plan ids live in memory. After a
+  restart, `build_plan` reports previously scored offers as never scored, and
+  `check_plan(plan_id)` fails as above. Plan files on disk still check fine by
+  `plan_path`.
+- **No tactics found → `pass: false`, not an error.** `check_plan` only reads
+  bullets under a `## Channel briefs` heading (up to `## Offer registry`), and
+  skips bullets shorter than 30 characters. A hand-written file without that
+  heading, or with only short bullets, reports `tacticsFound: 0`.
+- **Citations aren't checked against the registry.** A tactic citing `[O99]`
+  in a plan with one offer still counts as cited and can pass. Verify the
+  numbers yourself until this is tightened.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
