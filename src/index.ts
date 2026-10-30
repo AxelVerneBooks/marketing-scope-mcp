@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 /**
- * marketing-scope-mcp — MCP server (v0.1.0)
+ * marketing-scope-mcp — MCP server (v0.1.1)
  *
  * Marketing campaign workflow: plan a campaign with kill criteria, score
  * candidate offers explainably (0–100), assemble a campaign-plan shell with an
@@ -7,8 +8,8 @@
  * success metric before any money gets spent.
  *
  * Transports:
- *   - stdio (default):  `node dist/index.js`
- *   - Streamable HTTP:  `node dist/index.js --http --port 3002`
+ *   - stdio (default):  `npx -y marketing-scope-mcp`  (or `node dist/index.js`)
+ *   - Streamable HTTP:  `npx -y marketing-scope-mcp --http --port 3002`
  *
  * Tools:
  *   plan_campaign(objective)              -> channel/offer plan with kill criteria

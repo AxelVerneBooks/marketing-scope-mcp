@@ -1,8 +1,11 @@
 {
   "name": "marketing-scope-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for marketing campaign workflows: plan campaigns, score offers explainably, and build/verify plans where every tactic cites a scored offer.",
   "type": "module",
+  "bin": {
+    "marketing-scope-mcp": "dist/index.js"
+  },
   "license": "MIT",
   "files": [
     "dist",
@@ -16,7 +19,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http --port 3002",
-    "test": "npm run build && node --test test/server.test.mjs"
+    "test": "npm run build && node --test test/server.test.mjs",
+    "smoke": "node examples/quickstart.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.0",
