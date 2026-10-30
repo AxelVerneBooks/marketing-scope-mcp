@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.1 — unreleased
+
+- **Fix: `npx -y marketing-scope-mcp` now works.** 0.1.0 shipped without a
+  `bin` entry, so npx failed with "could not determine executable to run".
+  Added `bin` + shebang; `npm install -g` now puts `marketing-scope-mcp` on PATH.
+- README: one-command Quickstart (npx; `uvx` doesn't apply because this is a Node package), client
+  configs use npx, and the from-source path uses `$PWD/dist/index.js` instead of `/path/to/dist`.
+- README example session: replaced an incorrect "88/100 (A)" (that offer
+  actually scored 40/100, D) with real output from `examples/quickstart.mjs`.
+- New `examples/quickstart.mjs` and `install-smoke` CI workflow: pack →
+  clean install → npx/global-bin/HTTP/Docker smoke, plus the README's
+  from-source commands, on every push and PR.
+
 ## 0.1.0 — 2026-10-20
 
 Initial public release.

@@ -1,0 +1,113 @@
+# Verifies the install paths documented in README.md actually work, from a
+# clean environment, by running the Quickstart example against each one.
+name: install-smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1" # weekly: catches drift in the published npm package / SDK deps
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  # README "Quickstart" + "Other ways to install": npx, global install, HTTP.
+  packaged:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Build and pack the exact tarball npm would publish
+        run: |
+          npm ci
+          npm run build
+          mkdir -p "$RUNNER_TEMP/pack"
+          npm pack --pack-destination "$RUNNER_TEMP/pack"
+          echo "TGZ=$(ls "$RUNNER_TEMP"/pack/*.tgz)" >> "$GITHUB_ENV"
+      - name: npx -y marketing-scope-mcp (stdio) from an empty directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/empty" && cd "$RUNNER_TEMP/empty"
+          node "$GITHUB_WORKSPACE/examples/quickstart.mjs" -- npx -y --package="$TGZ" marketing-scope-mcp
+      - name: npm install -g, then the bare `marketing-scope-mcp` command
+        run: |
+          npm install -g "$TGZ"
+          cd "$RUNNER_TEMP"
+          node "$GITHUB_WORKSPACE/examples/quickstart.mjs" -- marketing-scope-mcp
+      - name: npx -y marketing-scope-mcp --http --port 3002
+        run: |
+          cd "$RUNNER_TEMP/empty"
+          npx -y --package="$TGZ" marketing-scope-mcp --http --port 3002 &
+          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:3002/mcp && break; sleep 1; done
+          curl -sf -X POST http://127.0.0.1:3002/mcp \
+            -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"plan_campaign","arguments":{"objective":"ci http smoke"}}}' \
+            | tee /dev/stderr | grep -q killCriteria
+
+  # README "See the whole workflow run": the from-source commands, verbatim, in a fresh clone.
+  from-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: marketing-scope-mcp
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - working-directory: marketing-scope-mcp
+        run: |
+          npm install && npm run build
+          node examples/quickstart.mjs
+
+  # README "Docker".
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker build -t marketing-scope-mcp -f docker/Dockerfile .
+          docker run -d --name marketing-scope -p 3002:3002 marketing-scope-mcp
+          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:3002/mcp && break; sleep 1; done
+          curl -sf -X POST http://127.0.0.1:3002/mcp \
+            -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+            | tee /dev/stderr | grep -q score_offer
+      - if: failure()
+        run: docker logs marketing-scope || true
+
+  # What users actually get from the registry today. Not run on PRs: a fix
+  # only reaches npm after publish, so this would block the PR that fixes it.
+  published:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: |
+          mkdir -p "$RUNNER_TEMP/empty" && cd "$RUNNER_TEMP/empty"
+          node "$GITHUB_WORKSPACE/examples/quickstart.mjs" -- npx -y marketing-scope-mcp@latest
