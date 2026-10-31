@@ -148,6 +148,57 @@ test("stateless HTTP transport: second request works with no session (regression
   }
 });
 
+test("invalid arguments come back as readable isError results for every tool (not raw exceptions)", async () => {
+  const client = StdioMcpClient.spawn();
+  try {
+    await client.request("initialize", {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: { name: "test-client", version: "0.0.1" },
+    });
+    client.notify("notifications/initialized", {});
+    const call = (name, args) => client.request("tools/call", { name, arguments: args });
+    const expectError = async (name, args, pattern) => {
+      const res = await call(name, args);
+      assert.equal(res.isError, true, `${name}(${JSON.stringify(args)}) should be an error: ${JSON.stringify(res)}`);
+      const text = textPayload(res);
+      assert.match(text, pattern);
+      assert.doesNotMatch(text, /MCP error -32602|"code":|invalid_type|at Object\.|\n\s+at /, `raw error leaked: ${text}`);
+      return text;
+    };
+
+    // tools/list advertises the strict schemas
+    const tools = await client.request("tools/list", {});
+    for (const t of tools.tools) {
+      assert.equal(t.inputSchema.additionalProperties, false, `${t.name} schema should be strict`);
+    }
+
+    // missing required fields
+    await expectError("plan_campaign", {}, /^Invalid arguments for plan_campaign:\n- "objective" is required/);
+    await expectError("score_offer", {}, /"offer" is required/);
+    await expectError("build_plan", {}, /"goal" is required[\s\S]*"offers" is required/);
+    await expectError("check_plan", {}, /check_plan needs a plan to check/);
+
+    // malformed input
+    await expectError("plan_campaign", { objective: "ok objective", audience_hints: "r/sysadmin" }, /"audience_hints" must be an array of strings/);
+    await expectError("score_offer", { offer: "too short" }, /"offer" is too short/);
+    await expectError("score_offer", { offr: "typo in the parameter name here" }, /does not accept parameter\(s\) "offr"/);
+    await expectError("build_plan", { goal: "Launch", offers: "one offer not in an array" }, /A single offer still goes inside an array/);
+    await expectError("check_plan", { plan_id: 42 }, /"plan_id" must be a string/);
+
+    // handler-level problems are explained too
+    await expectError("check_plan", { plan_id: "deadbeef" }, /No plan with id "deadbeef"/);
+    await expectError("check_plan", { plan_path: join(DATA_DIR, "does-not-exist.md") }, /Plan file not found/);
+    await expectError("check_plan", { plan_path: DATA_DIR }, /is a directory/);
+
+    // and valid input still works
+    const ok = await call("plan_campaign", { objective: "sell 30 copies of the build manual in 30 days" });
+    assert.notEqual(ok.isError, true);
+  } finally {
+    await client.close();
+  }
+});
+
 test("full workflow: plan → score_offer → build → check (gating enforced)", async () => {
   const client = StdioMcpClient.spawn();
   try {

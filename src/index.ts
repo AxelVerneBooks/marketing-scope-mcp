@@ -17,7 +17,7 @@
  *   check_plan(plan_id|plan_path)         -> every tactic must cite [On] + a success metric
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { resolve as pathResolve } from "node:path";
 import { createServer as createHttpServer } from "node:http";
@@ -25,10 +25,19 @@ import { createServer as createHttpServer } from "node:http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { z } from "zod";
-
+import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { scoreOffer, type OfferScore } from "./scoring/offer.js";
 import { version } from "./version.js";
+import {
+  planCampaignInput,
+  scoreOfferInput,
+  buildPlanInput,
+  checkPlanInput,
+  CHECK_PLAN_MISSING_TARGET,
+  toolInputSchemas,
+  validateToolArgs,
+  type ToolName,
+} from "./validation.js";
 
 const DATA_DIR = pathResolve(process.env.MARKETING_SCOPE_DATA_DIR ?? pathResolve(process.cwd(), "data"));
 
@@ -59,6 +68,33 @@ const plans = new Map<string, StoredPlan>();
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
 /* ------------------------------------------------------------------ */
+
+/** A tool result that reports a problem the caller can fix. */
+function toolError(text: string) {
+  return { isError: true, content: [{ type: "text" as const, text }] };
+}
+
+/** Turn a Node fs error into a short, human-readable reason. */
+function describeFsError(err: unknown): string {
+  const e = err as NodeJS.ErrnoException;
+  switch (e?.code) {
+    case "EACCES":
+    case "EPERM":
+      return "permission denied";
+    case "ENOENT":
+      return "a parent directory does not exist";
+    case "ENOTDIR":
+      return "part of the path is a file, not a directory";
+    case "EISDIR":
+      return "the path is a directory, not a file";
+    case "ENOSPC":
+      return "no space left on device";
+    case "EROFS":
+      return "the file system is read-only";
+    default:
+      return e?.message ?? String(err);
+  }
+}
 
 /** Extract tactic-looking lines from a plan's Channel briefs section. */
 function extractTactics(markdown: string): Array<{ tactic: string; tacticId: string; offerRefs: string[]; hasMetric: boolean }> {
@@ -130,6 +166,29 @@ function renderPlanShell(goal: string, offers: RegistryEntry[]): string {
   return lines.join("\n");
 }
 
+/**
+ * Validate every tools/call against our strict schemas BEFORE the SDK does,
+ * so a rejected call returns one readable, actionable list of problems
+ * (isError: true) instead of the SDK's generic "MCP error -32602 ..." text.
+ * Hooks the public Server.setRequestHandler so it wraps whatever tools/call
+ * handler McpServer installs; valid calls pass through untouched.
+ */
+function installFriendlyValidation(mcp: McpServer): void {
+  const low = mcp.server;
+  const original = low.setRequestHandler.bind(low);
+  low.setRequestHandler = ((schema: unknown, handler: (request: any, extra: any) => unknown) => {
+    if (schema !== CallToolRequestSchema) return original(schema as any, handler as any);
+    return original(CallToolRequestSchema, async (request, extra) => {
+      const name = request.params.name;
+      if (Object.prototype.hasOwnProperty.call(toolInputSchemas, name)) {
+        const checked = validateToolArgs(name as ToolName, request.params.arguments);
+        if (!checked.ok) return toolError(checked.message);
+      }
+      return (await handler(request, extra)) as any;
+    });
+  }) as typeof low.setRequestHandler;
+}
+
 /* ------------------------------------------------------------------ */
 /* server                                                              */
 /* ------------------------------------------------------------------ */
@@ -147,6 +206,8 @@ function buildServer(): McpServer {
     }
   );
 
+  installFriendlyValidation(server);
+
   /* --- tool 1: plan_campaign ---------------------------------------- */
 
   server.registerTool(
@@ -155,10 +216,7 @@ function buildServer(): McpServer {
       title: "Plan a campaign",
       description:
         "Turn a campaign objective into a pre-spend plan: offer targets, channel targets, anti-targets (budget black holes), and kill criteria. Purpose: decompose a marketing goal into scoreable tactics BEFORE any spend. Use this before score_offer on any new product/launch; re-plan only when kill criteria trigger. Sibling distinction: score_offer grades ONE offer statement; this plans the whole campaign strategy.",
-      inputSchema: {
-        objective: z.string().min(3).describe("What the campaign must accomplish, e.g. 'sell 30 copies of the build manual in 30 days'"),
-        audience_hints: z.array(z.string()).optional().describe("Where the audience already gathers, e.g. ['r/sysadmin', 'EMT Facebook groups', 'existing email list']"),
-      },
+      inputSchema: planCampaignInput,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ objective, audience_hints }) => {
@@ -201,10 +259,7 @@ function buildServer(): McpServer {
       title: "Score an offer",
       description:
         "Score one offer statement (the exact sentence a prospect would read) on an explainable 0–100 offer-strength scale: clarity 20 / audience specificity 24 / differentiation 20 / proof & risk reversal 20 / call to action 16. Grades: A >= 80, B >= 65, C >= 45, D < 45. Every dimension comes back WITH its evidence, so the number is auditable rather than a vibe. Side effect: the score is cached in an in-memory registry keyed by the exact offer text (lost on restart; re-score before finalizing a plan). Do NOT use it as a general copy critique — it grades offer statements, not landing pages. Sibling distinction: plan_campaign plans the strategy; this grades one sentence; build_plan consumes the scores.",
-      inputSchema: {
-        offer: z.string().min(12).describe("The offer statement exactly as a prospect would read it"),
-        audience: z.string().optional().describe("Optional explicit audience statement, folded into audience-specificity scoring"),
-      },
+      inputSchema: scoreOfferInput,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ offer, audience }) => {
@@ -227,10 +282,7 @@ function buildServer(): McpServer {
       title: "Build campaign-plan shell",
       description:
         "Build a campaign-plan shell from already-scored offers: strategy stubs, channel briefs, numbered offer registry, scoring appendix. Writes a markdown file under data/campaigns/ and returns the plan id plus the shell text. Do NOT call it before each offer has a score_offer — unscored offer texts are rejected with an error naming them. Sibling distinction: this creates the shell; check_plan later validates everything written against it.",
-      inputSchema: {
-        goal: z.string().min(3).describe("Campaign goal / title"),
-        offers: z.array(z.string().min(8)).min(1).describe("Offer texts previously scored with score_offer (exact text match)"),
-      },
+      inputSchema: buildPlanInput,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
     async ({ goal, offers }) => {
@@ -245,20 +297,22 @@ function buildServer(): McpServer {
         entries.push({ offerId: s.offerId, offer: s.offer, score: s.score, grade: s.grade, flags: s.flags, scoredAt: s.scoredAt });
       }
       if (missing.length) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `These offers were never scored — run score_offer on them first:\n${missing.join("\n")}`,
-            },
-          ],
-        };
+        return toolError(
+          `These offers were never scored — run score_offer on each one first (offers must match the scored text exactly, and scores are lost when the server restarts):\n${missing.map((m) => `- ${m}`).join("\n")}`
+        );
       }
-      if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-      if (!existsSync(pathResolve(DATA_DIR, "campaigns"))) mkdirSync(pathResolve(DATA_DIR, "campaigns"), { recursive: true });
       const id = randomUUID().slice(0, 8);
       const markdown = renderPlanShell(goal, entries);
+      const planPath = pathResolve(DATA_DIR, "campaigns", `campaign-${id}.md`);
+      try {
+        mkdirSync(pathResolve(DATA_DIR, "campaigns"), { recursive: true });
+        writeFileSync(planPath, markdown, "utf8");
+      } catch (err) {
+        return toolError(
+          `Could not save the campaign plan to ${planPath}: ${describeFsError(err)}. ` +
+            "Set MARKETING_SCOPE_DATA_DIR to a writable directory and retry."
+        );
+      }
       const plan: StoredPlan = {
         id,
         goal,
@@ -267,8 +321,6 @@ function buildServer(): McpServer {
         markdown,
       };
       plans.set(id, plan);
-      const planPath = pathResolve(DATA_DIR, "campaigns", `campaign-${id}.md`);
-      writeFileSync(planPath, markdown, "utf8");
       const registryLine = entries.map((e, i) => `[O${i + 1}] ${e.offer} (${e.score}/100, ${e.grade})`).join("\n");
       return {
         content: [
@@ -289,33 +341,43 @@ function buildServer(): McpServer {
       title: "Check plan tactic coverage",
       description:
         "Verify every substantive campaign tactic (a) cites at least one scored offer from the registry and (b) names a success metric. Violations are returned as an error list — never a silent pass. Read-only tool: inspects the registry and the plan file but writes nothing. Use it after every build_plan and again after any manual edit; do NOT use it on arbitrary markdown that never went through build_plan without first scoring its offers. Sibling distinction: build_plan creates the registry-backed shell; check_plan validates whatever is on disk against that registry.",
-      inputSchema: {
-        plan_id: z.string().optional().describe("Plan id returned by build_plan"),
-        plan_path: z.string().optional().describe("Path to a campaign markdown file (overrides plan_id)"),
-      },
+      inputSchema: checkPlanInput,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ plan_id, plan_path }) => {
-      let markdown: string | null = null;
-      let label = plan_id ?? plan_path ?? "";
+      let markdown: string;
+      let label: string;
       if (plan_path) {
         const p = pathResolve(plan_path);
         if (!existsSync(p)) {
-          return { isError: true, content: [{ type: "text" as const, text: `Plan file not found: ${p}` }] };
+          return toolError(`Plan file not found: ${p}. Pass the path build_plan printed ("saved to ..."), or use plan_id instead.`);
         }
-        markdown = readFileSync(p, "utf8");
+        if (!statSync(p).isFile()) {
+          return toolError(`plan_path must point to a campaign markdown file, but ${p} is a directory. Example: data/campaigns/campaign-3f9a2c1b.md`);
+        }
+        try {
+          markdown = readFileSync(p, "utf8");
+        } catch (err) {
+          return toolError(`Could not read plan file ${p}: ${describeFsError(err)}.`);
+        }
         label = p;
-      } else if (plan_id && plans.has(plan_id)) {
-        markdown = plans.get(plan_id)!.markdown;
+      } else if (plan_id) {
+        const stored = plans.get(plan_id);
+        if (!stored) {
+          const known = [...plans.keys()];
+          return toolError(
+            `No plan with id "${plan_id}" in this server session. ` +
+              (known.length ? `Known plan ids: ${known.join(", ")}. ` : "No plans have been built yet — run build_plan first. ") +
+              "Plans built before a server restart are only reachable via plan_path."
+          );
+        }
+        markdown = stored.markdown;
         label = plan_id;
       } else {
-        return {
-          isError: true,
-          content: [{ type: "text" as const, text: "Provide either plan_id (from build_plan) or plan_path." }],
-        };
+        return toolError(CHECK_PLAN_MISSING_TARGET);
       }
 
-      const tactics = extractTactics(markdown ?? "");
+      const tactics = extractTactics(markdown);
       const orphan = tactics.filter((t) => t.offerRefs.length === 0);
       const unmeasured = tactics.filter((t) => !t.hasMetric);
       const ok = orphan.length === 0 && unmeasured.length === 0 && tactics.length > 0;
