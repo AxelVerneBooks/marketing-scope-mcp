@@ -29,6 +29,19 @@ plan_campaign  →  score_offer  →  build_plan  →  check_plan
    offer (`[O1]`-style) and name a success metric. Violations come back as an
    error list — never a silent pass.
 
+### Input validation
+
+Every tool's parameters are checked against a strict schema
+([`src/validation.ts`](src/validation.ts)) before anything runs. Unknown
+parameters, wrong types, missing required fields and out-of-range lengths come
+back as an `isError` result listing **every** problem with a fix, e.g.:
+
+```text
+Invalid arguments for build_plan:
+- "goal" is required: give the campaign a goal / title. Example: "Farm ledger pre-launch".
+- "offers" must be an array of strings (exact offer texts scored with score_offer), e.g. ["<exact offer text>"]. A single offer still goes inside an array.
+```
+
 ## Install
 
 Node ≥ 20.
@@ -88,6 +101,8 @@ Data dir (plans on disk) defaults to `./data`; override with
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+By Axel Verne, author of *MCP for Business* — [axelverne.com](https://axelverne.com).
 
 ---
 
