@@ -29,6 +29,42 @@ plan_campaign  →  score_offer  →  build_plan  →  check_plan
    offer (`[O1]`-style) and name a success metric. Violations come back as an
    error list — never a silent pass.
 
+## Quickstart
+
+```bash
+git clone https://github.com/AxelVerneBooks/marketing-scope-mcp
+cd marketing-scope-mcp && npm install && npm run build
+npm run doctor                     # or: node dist/index.js doctor
+claude mcp add marketing-scope -- node "$PWD/dist/index.js"
+```
+
+`doctor` checks your environment and prints a fix for anything wrong:
+
+| Check | Fails / warns when | What it tells you to do |
+|---|---|---|
+| Node.js version | Node < 20 | install Node ≥ 20, rebuild |
+| Environment variables | `PORT` isn't 1–65535, or `MARKETING_SCOPE_DATA_DIR` is set but empty | fix or unset — **none are required** |
+| Data directory | `./data` (or `MARKETING_SCOPE_DATA_DIR`) can't be created/written | point the env var at a writable dir / mount a volume |
+| Network | *(warning only)* the `--http` port is taken | free the port or pass `--port` — stdio mode is unaffected |
+
+There are no API keys and no outbound network calls: scoring and plan checks
+run entirely locally, so the network check only covers the local HTTP port
+(`node dist/index.js doctor --port 8080` to check a non-default one). Exit
+code is `1` if any check fails, `0` otherwise — usable in CI or a Docker
+`HEALTHCHECK`-style preflight.
+
+```text
+marketing-scope-mcp 0.1.0 — doctor
+
+✔ [PASS] Node.js version: v22.11.0 (need >= 20)
+✔ [PASS] Environment variables: none required (optional: PORT, MARKETING_SCOPE_DATA_DIR)
+✖ [FAIL] Data directory: /srv/data is not writable (EACCES)
+    → Point MARKETING_SCOPE_DATA_DIR at a directory you can write to (e.g. `export MARKETING_SCOPE_DATA_DIR="$HOME/.marketing-scope"`), ...
+✔ [PASS] Network: no outbound APIs called; HTTP port 3002 is free for `--http` mode
+
+1 check(s) failed. Fix the items marked → above and re-run `npm run doctor`.
+```
+
 ## Install
 
 Node ≥ 20.

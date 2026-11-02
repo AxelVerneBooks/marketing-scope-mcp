@@ -10,6 +10,8 @@
  *   - stdio (default):  `node dist/index.js`
  *   - Streamable HTTP:  `node dist/index.js --http --port 3002`
  *
+ * Health check:         `node dist/index.js doctor`  (see src/doctor.ts)
+ *
  * Tools:
  *   plan_campaign(objective)              -> channel/offer plan with kill criteria
  *   score_offer(offer, audience?)         -> explainable 0–100 offer-strength score
@@ -29,6 +31,7 @@ import { z } from "zod";
 
 import { scoreOffer, type OfferScore } from "./scoring/offer.js";
 import { version } from "./version.js";
+import { doctor } from "./doctor.js";
 
 const DATA_DIR = pathResolve(process.env.MARKETING_SCOPE_DATA_DIR ?? pathResolve(process.cwd(), "data"));
 
@@ -410,7 +413,9 @@ function runHttp(port: number): void {
 /* --- entry -------------------------------------------------------- */
 
 const args = process.argv.slice(2);
-if (args.includes("--http")) {
+if (args[0] === "doctor") {
+  doctor(args.slice(1)).then((code) => process.exit(code));
+} else if (args.includes("--http")) {
   const portIdx = args.indexOf("--port");
   const port = portIdx >= 0 ? Number(args[portIdx + 1]) || 3002 : Number(process.env.PORT) || 3002;
   runHttp(port);

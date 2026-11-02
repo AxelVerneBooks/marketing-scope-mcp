@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `doctor` CLI (`node dist/index.js doctor` / `npm run doctor`): checks Node
+  version, optional env vars, data-dir writability and the `--http` port, and
+  prints an actionable next step for every failure; exits 1 on failure
+
 ## 0.1.0 — 2026-10-20
 
 Initial public release.
