@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every major covered by package.json "engines": ">=20".
+        # 20.0.0 pins the exact floor so a dependency that silently needs a
+        # newer 20.x minor fails here instead of on a user's machine.
+        # Keep this list in sync with the README "Compatibility" table.
+        node: ["20.0.0", "20", "22", "24", "25", "26"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: node --version && npm --version
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
