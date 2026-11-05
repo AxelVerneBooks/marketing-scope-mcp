@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- CI: GitHub Actions matrix runs `npm ci` + `npm test` on Node 20.0.0
+  (engines floor), 20, 22, 24, 25 and 26; README gains a compatibility table.
+
 ## 0.1.0 — 2026-10-20
 
 Initial public release.

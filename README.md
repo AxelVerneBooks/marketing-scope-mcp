@@ -7,6 +7,8 @@ scored offer **and** names a success metric — *before* any money is spent.
 The sibling of [`research-scope-mcp`](https://github.com/AxelVerneBooks/research-scope-mcp)
 (sources → citations) applied to marketing: tactics → scored offers.
 
+By [Axel Verne](https://axelverne.com), author of *MCP for Business*.
+
 ## The discipline
 
 ```
@@ -31,7 +33,7 @@ plan_campaign  →  score_offer  →  build_plan  →  check_plan
 
 ## Install
 
-Node ≥ 20.
+Node ≥ 20 (see [Compatibility](#compatibility)).
 
 ```bash
 npm install -g marketing-scope-mcp
@@ -84,6 +86,25 @@ Data dir (plans on disk) defaults to `./data`; override with
 > build_plan(goal: ..., offers: [that exact text])   # unscored → hard error
 > check_plan(...)   # orphan tactics → error list; metric-less → flagged
 ```
+
+## Compatibility
+
+`package.json` declares `"engines": { "node": ">=20" }`. CI
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci` +
+`npm test` (build, stdio workflow, stateless HTTP transport) on every
+version below.
+
+| Node.js | Release line | Tested in CI | Status |
+| ------- | ------------ | ------------ | ------ |
+| 18 and older | — | no | ❌ unsupported (`@hono/node-server`, used by the MCP SDK, requires ≥ 20) |
+| 20.0.0  | Iron — engines floor | ✅ exact version | ✅ supported (Node 20 is upstream EOL) |
+| 20.x    | Iron (LTS, EOL)    | ✅ latest 20.x | ✅ supported (Node 20 is upstream EOL) |
+| 22.x    | Jod (LTS)          | ✅ latest 22.x | ✅ supported |
+| 24.x    | Krypton (LTS)      | ✅ latest 24.x | ✅ supported |
+| 25.x    | Current (odd, EOL) | ✅ latest 25.x | ✅ supported |
+| 26.x    | Lithium (LTS)      | ✅ latest 26.x | ✅ supported |
+
+The Docker image uses `node:22-alpine`.
 
 ## License
 
